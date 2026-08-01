@@ -82,6 +82,40 @@ _start:
     syscall ; read second input
 
 
+    ; itoa
+    mov rdi, input1
+    call atoi
+    mov [num1], rax
+
+    mov rdi, input2
+    call atoi
+    mov [num2], rax
+
+
+
     mov rax, 60
     xor rdi, rdi
     syscall ; exit
+
+
+
+; ascii to integer conversion
+atoi:
+    mov rsi, rdi
+    xor rax, rax
+
+.loop:
+    cmp byte [rsi], 10
+    je .done
+
+    movzx rcx, byte [rsi]
+    sub rcx, '0'
+
+    imul rax, rax, 10
+    add rax, rcx
+
+    inc rsi
+    jmp .loop
+
+.done:
+    ret
