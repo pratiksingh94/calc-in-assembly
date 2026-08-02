@@ -22,7 +22,8 @@ section .bss
     input1 resb 32
     input2 resb 32
     num1 resq 1
-    num2 resq 2
+    num2 resq 1
+    output resb 32
 
 section .text
     global _start
@@ -92,10 +93,37 @@ _start:
     mov [num2], rax
 
 
+    mov r12, operation
+    cmp byte [r12], 43
+    je addition
 
+
+; duh, addition
+addition:
+    mov rax, [num1]
+    add rax, [num2]
+    ; mov [output], rax
+
+    mov rdi, rax
+    lea rsi, [output]
+    call itoa
+    
+    mov rdx, rax
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, output
+    syscall
+
+    jmp exit
+
+
+exit:
     mov rax, 60
     xor rdi, rdi
     syscall ; exit
+
+
+
 
 
 
@@ -118,4 +146,51 @@ atoi:
     jmp .loop
 
 .done:
+    ret
+
+
+itoa:
+    mov rax, rdi
+
+    test rax, rax
+    jnz .convert
+
+    mov byte [rsi], '0'
+    mov rax, 1
+    ret
+
+.convert:
+    lea r8, [rsi + 31]
+    xor r9, r9
+
+.loop:
+    xor rdx, rdx
+    mov rcx, 10
+    div rcx
+
+    add dl, '0'
+    dec r8
+    mov [r8], dl
+
+    inc r9
+
+    test rax, rax
+    jnz .loop
+
+    mov rcx, r9
+    mov rdx, r8
+    mov r8, rsi
+
+.copy:
+    mov al, [rdx]
+    mov [r8], al
+    
+    inc rdx
+    inc r8
+    loop .copy
+
+    mov byte [r8], 10
+    inc r9
+
+    mov rax, r9
     ret
