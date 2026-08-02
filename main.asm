@@ -100,6 +100,9 @@ _start:
     cmp byte [r12], 45
     je subtraction
 
+    cmp byte [r12], 42
+    je multiplication
+
 
 ; duh, addition
 addition:
@@ -122,6 +125,23 @@ addition:
 subtraction:
     mov rax, [num1]
     sub rax, [num2]
+
+    mov rdi, rax
+    lea rsi, [output]
+    call itoa
+
+    mov rdx, rax
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, output
+    syscall
+
+    jmp exit
+
+multiplication:
+    mov rax, [num1]
+    mov rcx, [num2]
+    mul rcx
 
     mov rdi, rax
     lea rsi, [output]
