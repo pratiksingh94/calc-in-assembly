@@ -16,6 +16,9 @@ section .data
     second_num_msg db "enter second number: "
     second_num_msg_len equ $ - second_num_msg
 
+    divide_by_zero_msg db 10, "really dawg? divide by zero? be fr", 10
+    divide_by_zero_msg_len equ $ - divide_by_zero_msg
+
 
 section .bss
     operation resb 2
@@ -103,6 +106,9 @@ _start:
     cmp byte [r12], 42
     je multiplication
 
+    cmp byte [r12], 47
+    je division
+
 
 ; duh, addition
 addition:
@@ -151,6 +157,36 @@ multiplication:
     mov rax, 1
     mov rdi, 1
     mov rsi, output
+    syscall
+
+    jmp exit
+
+division:
+    mov rax, [num1]
+    xor rdx, rdx
+    mov rcx, [num2]
+    cmp rcx, 0
+    je divide_by_zero
+
+    div rcx
+
+    mov rdi, rax
+    lea rsi, [output]
+    call itoa
+
+    mov rdx, rax
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, output
+    syscall
+
+    jmp exit
+
+divide_by_zero:
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, divide_by_zero_msg
+    mov rdx, divide_by_zero_msg_len
     syscall
 
     jmp exit
