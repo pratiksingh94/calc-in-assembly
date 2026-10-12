@@ -19,11 +19,14 @@ section .data
     divide_by_zero_msg db 10, "really dawg? divide by zero? be fr", 10
     divide_by_zero_msg_len equ $ - divide_by_zero_msg
 
-    invalid_op_msg db "invalid operation, use one of the + - * /", 10
+    invalid_op_msg db 10, "invalid operation, use one of the + - * /", 10
     invalid_op_msg_len equ $ - invalid_op_msg
 
-    invalid_num_msg db "invalid number, use digits 0-9 only", 10
+    invalid_num_msg db 10, "invalid number, use digits 0-9 only", 10
     invalid_num_msg_len equ $ - invalid_num_msg
+
+    neg_result_msg db 10, "negative result not supported for now", 10
+    neg_result_msg_len equ $ - neg_result_msg
 
 
 section .bss
@@ -141,6 +144,7 @@ addition:
 subtraction:
     mov rax, [num1]
     sub rax, [num2]
+    jb negative_result
 
     mov rdi, rax
     lea rsi, [output]
@@ -194,12 +198,12 @@ division:
 
 divide_by_zero:
     mov rax, 1
-    mov rdi, 1
+    mov rdi, 2
     mov rsi, divide_by_zero_msg
     mov rdx, divide_by_zero_msg_len
     syscall
 
-    jmp exit
+    jmp error_exit
 
 invalid_operation:
     mov rax, 1
@@ -217,6 +221,14 @@ invalid_number:
     mov rdx, invalid_num_msg_len
     syscall
 
+    jmp error_exit
+
+negative_result:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, neg_result_msg
+    mov rdx, neg_result_msg_len
+    syscall
     jmp error_exit
 
 exit:
