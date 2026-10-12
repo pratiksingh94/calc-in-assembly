@@ -19,6 +19,9 @@ section .data
     divide_by_zero_msg db 10, "really dawg? divide by zero? be fr", 10
     divide_by_zero_msg_len equ $ - divide_by_zero_msg
 
+    invalid_op_msg db "invalid operation, use one of the + - * /", 10
+    invalid_op_msg_len equ $ - invalid_op_msg
+
 
 section .bss
     operation resb 2
@@ -109,6 +112,8 @@ _start:
     cmp byte [r12], 47
     je division
 
+    jmp invalid_operation
+
 
 ; duh, addition
 addition:
@@ -191,6 +196,15 @@ divide_by_zero:
 
     jmp exit
 
+invalid_operation:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, invalid_op_msg
+    mov rdx, invalid_op_msg_len
+    syscall
+
+    jmp error_exit
+
 
 exit:
     mov rax, 60
@@ -198,7 +212,10 @@ exit:
     syscall ; exit
 
 
-
+error_exit:
+    mov rax, 60
+    mov rdi, 1
+    syscall
 
 
 
