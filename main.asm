@@ -22,6 +22,9 @@ section .data
     invalid_op_msg db "invalid operation, use one of the + - * /", 10
     invalid_op_msg_len equ $ - invalid_op_msg
 
+    invalid_num_msg db "invalid number, use digits 0-9 only", 10
+    invalid_num_msg_len equ $ - invalid_num_msg
+
 
 section .bss
     operation resb 2
@@ -92,10 +95,12 @@ _start:
     ; itoa
     mov rdi, input1
     call atoi
+    jc invalid_number
     mov [num1], rax
 
     mov rdi, input2
     call atoi
+    jc invalid_number
     mov [num2], rax
 
 
@@ -205,6 +210,14 @@ invalid_operation:
 
     jmp error_exit
 
+invalid_number:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, invalid_num_msg
+    mov rdx, invalid_num_msg_len
+    syscall
+
+    jmp error_exit
 
 exit:
     mov rax, 60
@@ -223,21 +236,38 @@ error_exit:
 atoi:
     mov rsi, rdi
     xor rax, rax
+    xor r9, r9
 
 .loop:
-    cmp byte [rsi], 10
-    je .done
-
     movzx rcx, byte [rsi]
-    sub rcx, '0'
+    cmp cl, 10
+    je .done
+    ; je .done
 
+    cmp cl, '0'
+    jb .error
+    cmp cl, '9'
+    ja .error
+
+    sub rcx, '0'
     imul rax, rax, 10
+    jc .error
     add rax, rcx
+    jc .error
+
 
     inc rsi
+    inc r9
     jmp .loop
 
 .done:
+    test r9, r9
+    jz .error
+    clc
+    ret
+
+.error:
+    stc ; tuff function
     ret
 
 
