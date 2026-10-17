@@ -14,7 +14,7 @@ make clean
 ```
 
 ### Usage
-its just `./main` :3
+its just `./calc-in-asm` :3
 
 ### Limitations
 too lazy to fix these rn.
