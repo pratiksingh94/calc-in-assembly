@@ -28,6 +28,15 @@ section .data
     neg_result_msg db 10, "negative result not supported for now", 10
     neg_result_msg_len equ $ - neg_result_msg
 
+    overflow_msg db 10, "overflow, result too large for 64-bit", 10
+    overflow_msg_len equ $ - overflow_msg
+
+    input_overflow_msg db 10, "number too large, max 18446744073709551615 (64 bit limit)", 10
+    input_overflow_msg_len equ $ - input_overflow_msg
+
+    read_err_msg db 10, "failed to read input", 10
+    read_err_msg_len equ $ - read_err_msg
+
 
 section .bss
     operation resb 2
@@ -60,7 +69,14 @@ _start:
     mov rdi, 0
     mov rsi, operation
     mov rdx, 2
-    syscall ; read operation
+    syscall
+    test rax, rax
+    jle read_error
+    cmp rax, 2
+    jne .op_ok
+    cmp byte [operation + 1], 10
+    jne invalid_operation
+.op_ok:
 
 
 
@@ -76,7 +92,18 @@ _start:
     mov rdi, 0
     mov rsi, input1
     mov rdx, 32
-    syscall ; read first input
+    syscall
+    test rax, rax
+    jle read_error
+    mov rcx, rax
+    mov rsi, input1
+.in1_scan:
+    cmp byte [rsi], 10
+    je .in1_ok
+    inc rsi
+    loop .in1_scan
+    jmp input_overflow
+.in1_ok:
 
 
 
@@ -92,19 +119,41 @@ _start:
     mov rdi, 0
     mov rsi, input2
     mov rdx, 32
-    syscall ; read second input
+    syscall
+    test rax, rax
+    jle read_error
+    mov rcx, rax
+    mov rsi, input2
+.in2_scan:
+    cmp byte [rsi], 10
+    je .in2_ok
+    inc rsi
+    loop .in2_scan
+    jmp input_overflow
+.in2_ok:
 
 
     ; itoa
     mov rdi, input1
     call atoi
-    jc invalid_number
+    jc .atoi_fail1
     mov [num1], rax
-
+    jmp .atoi_ok1
+.atoi_fail1:
+    cmp r11, 2
+    je input_overflow
+    jmp invalid_number
+.atoi_ok1:
     mov rdi, input2
     call atoi
-    jc invalid_number
+    jc .atoi_fail2
     mov [num2], rax
+    jmp .atoi_ok2
+.atoi_fail2:
+    cmp r11, 2
+    je input_overflow
+    jmp invalid_number
+.atoi_ok2:
 
 
     mov r12, operation
@@ -127,7 +176,7 @@ _start:
 addition:
     mov rax, [num1]
     add rax, [num2]
-    ; mov [output], rax
+    jc overflow
 
     mov rdi, rax
     lea rsi, [output]
@@ -162,6 +211,8 @@ multiplication:
     mov rax, [num1]
     mov rcx, [num2]
     mul rcx
+    test rdx, rdx
+    jnz overflow
 
     mov rdi, rax
     lea rsi, [output]
@@ -231,6 +282,30 @@ negative_result:
     syscall
     jmp error_exit
 
+overflow:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, overflow_msg
+    mov rdx, overflow_msg_len
+    syscall
+    jmp error_exit
+
+input_overflow:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, input_overflow_msg
+    mov rdx, input_overflow_msg_len
+    syscall
+    jmp error_exit
+
+read_error:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, read_err_msg
+    mov rdx, read_err_msg_len
+    syscall
+    jmp error_exit
+
 exit:
     mov rax, 60
     xor rdi, rdi
@@ -249,37 +324,43 @@ atoi:
     mov rsi, rdi
     xor rax, rax
     xor r9, r9
+    xor r11, r11
 
 .loop:
     movzx rcx, byte [rsi]
     cmp cl, 10
     je .done
-    ; je .done
-
+    test cl, cl
+    jz .done
     cmp cl, '0'
-    jb .error
+    jb .bad_char
     cmp cl, '9'
-    ja .error
-
+    ja .bad_char
     sub rcx, '0'
-    imul rax, rax, 10
-    jc .error
+    mov r10, 10
+    mul r10
+    test rdx, rdx
+    jnz .overflow
     add rax, rcx
-    jc .error
-
-
+    jc .overflow
     inc rsi
     inc r9
     jmp .loop
 
 .done:
     test r9, r9
-    jz .error
+    jz .bad_char
     clc
     ret
 
-.error:
-    stc ; tuff function
+.bad_char:
+    mov r11, 1
+    stc
+    ret
+
+.overflow:
+    mov r11, 2
+    stc
     ret
 
 
@@ -290,7 +371,8 @@ itoa:
     jnz .convert
 
     mov byte [rsi], '0'
-    mov rax, 1
+    mov byte [rsi + 1], 10
+    mov rax, 2
     ret
 
 .convert:
