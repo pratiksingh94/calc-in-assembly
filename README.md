@@ -1,10 +1,24 @@
 # Basic Calculator
-Written in `x86_64` Assembly
+Written in `x86_64` Assembly (linux only, no libc)
 
 
-### To Do
-- [x] add/sub/mul/div actions
-- [ ] checks
-- [ ] floating point value handling
-- [ ] improve cli
-- [ ] new operations
+### Features (not many, but still something ig)
+- ops: `+` `-` `*` `/`
+- checks for invalid op, invalid digits, empty input, negative output, divide by zero, `u64` overflow
+
+### Build
+after cloning it
+```bash
+make # uses nasm
+make clean
+```
+
+### Usage
+its just `./main` :3
+
+### Limitations
+too lazy to fix these rn.
+
+- range: `u64` only
+- no foats
+- no negative input/output
