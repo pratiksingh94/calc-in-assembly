@@ -1,6 +1,8 @@
 # Basic Calculator
 Written in `x86_64` Assembly (linux only, no libc)
 
+### Demo
+![demo](assets/iamgay.gif)
 
 ### Features (not many, but still something ig)
 - ops: `+` `-` `*` `/`
